@@ -1,6 +1,17 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Routes, Route } from 'react-router-dom';
-import { Box, Flex, useColorMode } from '@chakra-ui/react';
+import {
+  Box,
+  Flex,
+  useColorMode,
+  useToast,
+  Button,
+  Alert,
+  AlertIcon,
+  AlertTitle,
+  AlertDescription,
+  CloseButton
+} from '@chakra-ui/react';
 import Home from './pages/Home';
 import Settings from './pages/Settings';
 import Workout from './pages/Workout';
@@ -11,6 +22,8 @@ import { useSettings } from './contexts/SettingsContext';
 function App({ updateSW }) {
   const { theme } = useSettings();
   const { setColorMode } = useColorMode();
+  const toast = useToast();
+  const [needRefresh, setNeedRefresh] = useState(false);
 
   // Sync Chakra's color mode with our app's theme setting
   useEffect(() => {
@@ -19,19 +32,51 @@ function App({ updateSW }) {
     }
   }, [theme, setColorMode]);
 
-  // Check for SW updates
-  useEffect(() => {
+  // Custom update handler that will show a toast notification
+  const handleServiceWorkerUpdate = () => {
     if (typeof updateSW === 'function') {
-      const intervalId = setInterval(() => {
+      // Create a custom notification for updates
+      const update = () => {
         updateSW(true);
-      }, 60 * 60 * 1000); // Check every hour
+        setNeedRefresh(false);
+      };
+
+      // Override the onNeedRefresh callback
+      window.addEventListener('sw-update-found', () => {
+        setNeedRefresh(true);
+      });
+
+      // Check for updates every hour
+      const intervalId = setInterval(() => {
+        updateSW();
+      }, 60 * 60 * 1000);
 
       return () => clearInterval(intervalId);
     }
-  }, [updateSW]);
+  };
+
+  useEffect(handleServiceWorkerUpdate, [updateSW]);
 
   return (
     <Flex direction="column" minHeight="100vh">
+      {needRefresh && (
+        <Alert status="info">
+          <AlertIcon />
+          <AlertTitle mr={2}>Update Available!</AlertTitle>
+          <AlertDescription>
+            A new version of HeavyHITR is available.
+          </AlertDescription>
+          <Button colorScheme="blue" ml={4} onClick={() => updateSW(true)}>
+            Update Now
+          </Button>
+          <CloseButton
+            position="absolute"
+            right="8px"
+            top="8px"
+            onClick={() => setNeedRefresh(false)}
+          />
+        </Alert>
+      )}
       <Header />
       <Box flex="1" as="main" px={4} py={6} maxWidth="container.xl" mx="auto">
         <Routes>

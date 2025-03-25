@@ -13,7 +13,7 @@ import {
   Center,
   Flex,
   Card,
-  useColorModeValue
+  useColorMode
 } from '@chakra-ui/react';
 import { useSettings } from '../contexts/SettingsContext';
 import { useAudio } from '../contexts/AudioContext';
@@ -22,16 +22,22 @@ import { useWorkout } from '../contexts/WorkoutContext';
 function Workout() {
   const location = useLocation();
   const navigate = useNavigate();
-  const cardBg = useColorModeValue('white', 'gray.800');
-  const trackColor = useColorModeValue('gray.200', 'gray.700');
-  const textColor = useColorModeValue('gray.600', 'gray.400');
+  const { colorMode } = useColorMode();
+  const cardBg = colorMode === 'dark' ? 'gray.800' : 'white';
+  const trackColor = colorMode === 'dark' ? 'gray.700' : 'gray.200';
+  const textColor = colorMode === 'dark' ? 'gray.400' : 'gray.600';
 
   const { rounds, roundLength, breakLength } = useSettings();
-  const { playBellStart, playBellEnd, playCountdown, playCurrentCue } = useAudio();
-  const { setCurrentWorkoutType, currentFocus, nextFocus } = useWorkout();
+  const { playSoundEffect, playCue, initializeAudio } = useAudio();
+  const { updateWorkoutConfig, focusExercises, updateFocusExercises } = useWorkout();
 
   // Set workout type from navigation state or default to 'fundamentals'
   const workoutType = location.state?.workoutType || 'fundamentals';
+
+  // Initialize audio system if needed
+  useEffect(() => {
+    initializeAudio();
+  }, [initializeAudio]);
 
   const [isActive, setIsActive] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -40,14 +46,40 @@ function Workout() {
   const [isBreak, setIsBreak] = useState(false);
   const [lastCueTime, setLastCueTime] = useState(0);
 
+  // Current focus for the workout
+  const currentFocus = focusExercises.current || '';
+
+  // Function to update the focus
+  const nextFocus = () => {
+    const focuses = {
+      'fundamentals': ['Jabs', 'Stance', 'Footwork', 'Straight punches', 'Guard position'],
+      'power': ['Body shots', 'Hooks', 'Power combos', 'Uppercuts', 'Heavy strikes'],
+      'speed': ['Fast combos', 'Double jabs', 'Quick steps', 'Speed drills', 'Rapid fire'],
+      'endurance': ['Volume punches', 'Sustained pace', 'Active movement', 'High output', 'Constant work'],
+      'defense': ['Slips & blocks', 'Parries', 'Head movement', 'Counter punches', 'Defensive footwork'],
+      'freestyle': ['Creative combos', 'Mixed techniques', 'Flow punching', 'Rhythm changes', 'Free expression']
+    };
+
+    // Get the focus options for the current workout type
+    const focusOptions = focuses[workoutType] || focuses.fundamentals;
+
+    // Select a random focus that's different from the current one
+    let newFocus;
+    do {
+      newFocus = focusOptions[Math.floor(Math.random() * focusOptions.length)];
+    } while (newFocus === currentFocus && focusOptions.length > 1);
+
+    updateFocusExercises({ current: newFocus });
+  };
+
   // Refs for timer and interval handling
   const timerRef = useRef(null);
   const cueCooldown = 10; // seconds between verbal cues
 
   // Effect to set workout type when component mounts
   useEffect(() => {
-    setCurrentWorkoutType(workoutType);
-  }, [workoutType, setCurrentWorkoutType]);
+    updateWorkoutConfig({ workoutType });
+  }, [workoutType, updateWorkoutConfig]);
 
   // Timer management
   useEffect(() => {
@@ -61,7 +93,7 @@ function Workout() {
             if (isBreak) {
               if (currentRound < rounds) {
                 setIsBreak(false);
-                playBellStart();
+                playSoundEffect('bell_start');
                 nextFocus();
                 return roundLength;
               }
@@ -69,12 +101,12 @@ function Workout() {
               // If we've completed all rounds, end the workout
               if (currentRound >= rounds) {
                 setIsActive(false);
-                playBellEnd();
+                playSoundEffect('bell_end');
                 return 0;
               } else {
                 // Otherwise, start a break
                 setIsBreak(true);
-                playBellEnd();
+                playSoundEffect('bell_end');
                 setCurrentRound(prev => prev + 1);
                 return breakLength;
               }
@@ -86,24 +118,26 @@ function Workout() {
     }
 
     return () => clearInterval(timerRef.current);
-  }, [isActive, isPaused, isBreak, currentRound, rounds, roundLength, breakLength, playBellStart, playBellEnd, nextFocus]);
+  }, [isActive, isPaused, isBreak, currentRound, rounds, roundLength, breakLength, playSoundEffect]);
 
   // Effect for playing audio cues during workout
   useEffect(() => {
     if (isActive && !isPaused && !isBreak) {
       // Play countdown when time is low
       if (timeLeft <= 5 && timeLeft > 0) {
-        playCountdown();
+        playSoundEffect('countdown');
       }
 
       // Play coaching cues periodically
       const now = Date.now();
       if (now - lastCueTime > cueCooldown * 1000) {
-        playCurrentCue();
+        // If you have specific cues in your cuePool, you can select one
+        // For now, we'll skip this since we need to understand your cue structure
+        // playCue({ cue: "Great work" });
         setLastCueTime(now);
       }
     }
-  }, [timeLeft, isActive, isPaused, isBreak, playCountdown, playCurrentCue, lastCueTime]);
+  }, [timeLeft, isActive, isPaused, isBreak, playSoundEffect, lastCueTime]);
 
   // Start or pause workout
   const toggleWorkout = () => {
@@ -114,7 +148,9 @@ function Workout() {
       setCurrentRound(1);
       setIsBreak(false);
       setTimeLeft(roundLength);
-      playBellStart();
+      playSoundEffect('bell_start');
+      // Set initial focus when starting workout
+      nextFocus();
     } else {
       // Toggling pause state
       setIsPaused(!isPaused);

@@ -11,15 +11,16 @@ import {
   CardBody,
   CardHeader,
   CardFooter,
-  useColorModeValue
+  useColorMode
 } from '@chakra-ui/react';
 
 function Home() {
   const navigate = useNavigate();
+  const { colorMode } = useColorMode();
 
-  // Use useColorModeValue instead of useColorMode
-  const cardBg = useColorModeValue('white', 'gray.800');
-  const cardBorderColor = useColorModeValue('gray.200', 'gray.700');
+  // Use conditional values based on colorMode instead of useColorModeValue
+  const cardBg = colorMode === 'dark' ? 'gray.800' : 'white';
+  const cardBorderColor = colorMode === 'dark' ? 'gray.700' : 'gray.200';
 
   // Workout types for the cards
   const workoutTypes = [

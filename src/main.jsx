@@ -6,6 +6,7 @@ import App from './App';
 import { SettingsProvider } from './contexts/SettingsContext';
 import { AudioProvider } from './contexts/AudioContext';
 import { WorkoutProvider } from './contexts/WorkoutContext';
+// Import the virtual PWA register function
 import { registerSW } from 'virtual:pwa-register';
 
 // Define Chakra theme with color mode config
@@ -33,12 +34,18 @@ const theme = extendTheme({
 // Register service worker with update handling
 const updateSW = registerSW({
   onNeedRefresh() {
+    // You could show a UI notification here
     console.log('New content available, click on reload button to update.');
   },
   onOfflineReady() {
     console.log('App ready to work offline');
   },
-  immediate: true
+  onRegistered(r) {
+    console.log('Service worker registered');
+  },
+  onRegisterError(error) {
+    console.error('Service worker registration error:', error);
+  }
 });
 
 ReactDOM.createRoot(document.getElementById('root')).render(
@@ -46,7 +53,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     {/* Add ColorModeScript before ChakraProvider */}
     <ColorModeScript initialColorMode={theme.config.initialColorMode} />
     <ChakraProvider theme={theme}>
-      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <BrowserRouter>
         <SettingsProvider>
           <AudioProvider>
             <WorkoutProvider>
