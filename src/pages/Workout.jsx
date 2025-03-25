@@ -13,11 +13,14 @@ import {
   Center,
   Flex,
   Card,
-  useColorMode
+  useColorMode,
+  ScaleFade,
+  SlideFade
 } from '@chakra-ui/react';
 import { useSettings } from '../contexts/SettingsContext';
 import { useAudio } from '../contexts/AudioContext';
 import { useWorkout } from '../contexts/WorkoutContext';
+import { FOCUS_EXERCISES } from '../utils/constants';
 
 function Workout() {
   const location = useLocation();
@@ -26,18 +29,29 @@ function Workout() {
   const cardBg = colorMode === 'dark' ? 'gray.800' : 'white';
   const trackColor = colorMode === 'dark' ? 'gray.700' : 'gray.200';
   const textColor = colorMode === 'dark' ? 'gray.400' : 'gray.600';
+  const accentColor = colorMode === 'dark' ? 'blue.300' : 'blue.500';
 
   const { rounds, roundLength, breakLength } = useSettings();
-  const { playSoundEffect, playCue, initializeAudio } = useAudio();
-  const { updateWorkoutConfig, focusExercises, updateFocusExercises } = useWorkout();
+  const {
+    playBellStart,
+    playBellEnd,
+    playCountdown,
+    playCurrentCue,
+    clearCurrentCue,
+    initializeAudio,
+    visibleCueText
+  } = useAudio();
+
+  const {
+    workoutConfig,
+    updateWorkoutConfig,
+    focusExercises,
+    updateFocusExercises,
+    nextFocus
+  } = useWorkout();
 
   // Set workout type from navigation state or default to 'fundamentals'
   const workoutType = location.state?.workoutType || 'fundamentals';
-
-  // Initialize audio system if needed
-  useEffect(() => {
-    initializeAudio();
-  }, [initializeAudio]);
 
   const [isActive, setIsActive] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -46,22 +60,28 @@ function Workout() {
   const [isBreak, setIsBreak] = useState(false);
   const [lastCueTime, setLastCueTime] = useState(0);
 
-  // Current focus for the workout
-  const currentFocus = focusExercises.current || '';
+  // Initialize audio system
+  useEffect(() => {
+    initializeAudio();
+  }, []);
 
-  // Function to update the focus
-  const nextFocus = () => {
-    const focuses = {
-      'fundamentals': ['Jabs', 'Stance', 'Footwork', 'Straight punches', 'Guard position'],
-      'power': ['Body shots', 'Hooks', 'Power combos', 'Uppercuts', 'Heavy strikes'],
-      'speed': ['Fast combos', 'Double jabs', 'Quick steps', 'Speed drills', 'Rapid fire'],
-      'endurance': ['Volume punches', 'Sustained pace', 'Active movement', 'High output', 'Constant work'],
-      'defense': ['Slips & blocks', 'Parries', 'Head movement', 'Counter punches', 'Defensive footwork'],
-      'freestyle': ['Creative combos', 'Mixed techniques', 'Flow punching', 'Rhythm changes', 'Free expression']
-    };
+  // Effect to set workout type when component mounts
+  useEffect(() => {
+    updateWorkoutConfig({ workoutType });
+    // Only generate a new focus if the workout type changed or there is no current focus
+    if (workoutType !== workoutConfig.workoutType || !focusExercises.current) {
+      generateNextFocus();
+    }
+  }, [workoutType]);
 
-    // Get the focus options for the current workout type
-    const focusOptions = focuses[workoutType] || focuses.fundamentals;
+  // Refs for timer and interval handling
+  const timerRef = useRef(null);
+  const cueCooldown = 10; // seconds between verbal cues
+
+  // Generate a focused exercise for the current workout type
+  const generateNextFocus = () => {
+    const focusOptions = FOCUS_EXERCISES[workoutType] || FOCUS_EXERCISES.fundamentals;
+    const currentFocus = focusExercises.current;
 
     // Select a random focus that's different from the current one
     let newFocus;
@@ -71,15 +91,6 @@ function Workout() {
 
     updateFocusExercises({ current: newFocus });
   };
-
-  // Refs for timer and interval handling
-  const timerRef = useRef(null);
-  const cueCooldown = 10; // seconds between verbal cues
-
-  // Effect to set workout type when component mounts
-  useEffect(() => {
-    updateWorkoutConfig({ workoutType });
-  }, [workoutType, updateWorkoutConfig]);
 
   // Timer management
   useEffect(() => {
@@ -93,20 +104,20 @@ function Workout() {
             if (isBreak) {
               if (currentRound < rounds) {
                 setIsBreak(false);
-                playSoundEffect('bell_start');
-                nextFocus();
+                playBellStart();
+                generateNextFocus();
                 return roundLength;
               }
             } else {
               // If we've completed all rounds, end the workout
               if (currentRound >= rounds) {
                 setIsActive(false);
-                playSoundEffect('bell_end');
+                playBellEnd();
                 return 0;
               } else {
                 // Otherwise, start a break
                 setIsBreak(true);
-                playSoundEffect('bell_end');
+                playBellEnd();
                 setCurrentRound(prev => prev + 1);
                 return breakLength;
               }
@@ -118,26 +129,31 @@ function Workout() {
     }
 
     return () => clearInterval(timerRef.current);
-  }, [isActive, isPaused, isBreak, currentRound, rounds, roundLength, breakLength, playSoundEffect]);
+  }, [isActive, isPaused, isBreak, currentRound, rounds, roundLength, breakLength]);
 
   // Effect for playing audio cues during workout
   useEffect(() => {
     if (isActive && !isPaused && !isBreak) {
       // Play countdown when time is low
       if (timeLeft <= 5 && timeLeft > 0) {
-        playSoundEffect('countdown');
+        playCountdown();
       }
 
       // Play coaching cues periodically
       const now = Date.now();
       if (now - lastCueTime > cueCooldown * 1000) {
-        // If you have specific cues in your cuePool, you can select one
-        // For now, we'll skip this since we need to understand your cue structure
-        // playCue({ cue: "Great work" });
+        playCurrentCue();
         setLastCueTime(now);
       }
     }
-  }, [timeLeft, isActive, isPaused, isBreak, playSoundEffect, lastCueTime]);
+  }, [timeLeft, isActive, isPaused, isBreak]);
+
+  // Clean up audio cues when the component unmounts
+  useEffect(() => {
+    return () => {
+      clearCurrentCue();
+    };
+  }, []);
 
   // Start or pause workout
   const toggleWorkout = () => {
@@ -148,9 +164,7 @@ function Workout() {
       setCurrentRound(1);
       setIsBreak(false);
       setTimeLeft(roundLength);
-      playSoundEffect('bell_start');
-      // Set initial focus when starting workout
-      nextFocus();
+      playBellStart();
     } else {
       // Toggling pause state
       setIsPaused(!isPaused);
@@ -165,6 +179,7 @@ function Workout() {
     setTimeLeft(roundLength);
     setCurrentRound(0);
     setIsBreak(false);
+    clearCurrentCue();
   };
 
   // End workout and go back home
@@ -203,9 +218,28 @@ function Workout() {
         </Heading>
 
         <Text mt={1} fontSize="lg">
-          {isBreak ? 'Recover' : `Focus: ${currentFocus}`}
+          {isBreak ? 'Recover' : `Focus: ${focusExercises.current || ''}`}
         </Text>
       </Box>
+
+      {/* Cue display - only show when there's an active cue */}
+      <SlideFade in={!!visibleCueText} offsetY="-20px">
+        <Box
+          bg={accentColor}
+          color="white"
+          py={3}
+          px={6}
+          borderRadius="lg"
+          boxShadow="md"
+          textAlign="center"
+          fontWeight="bold"
+          fontSize="xl"
+          visibility={visibleCueText ? "visible" : "hidden"}
+          mb={4}
+        >
+          {visibleCueText}
+        </Box>
+      </SlideFade>
 
       <Box position="relative">
         <CircularProgress
@@ -283,7 +317,8 @@ function Workout() {
         </Button>
       </Flex>
 
-      {currentFocus && (
+      {/* Current focus display */}
+      {focusExercises.current && (
         <Card
           p={4}
           bg={cardBg}
@@ -297,7 +332,7 @@ function Workout() {
             <Text fontSize="xl" fontWeight="bold">
               {isBreak ? 'Next Focus: ' : 'Current Focus: '}
               <Text as="span" color={isBreak ? 'blue.400' : 'brand.500'}>
-                {currentFocus}
+                {focusExercises.current}
               </Text>
             </Text>
           </Center>

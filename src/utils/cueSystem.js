@@ -85,6 +85,8 @@ export const selectCue = (
  * @returns {string} Processed cue text
  */
 export const processCueText = (cueText, params = {}) => {
+  if (!cueText) return '';
+
   let processed = cueText;
   
   // Replace template variables
