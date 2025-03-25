@@ -1,0 +1,33 @@
+[
+  { "cue": "Let's work.", "type": "start", "workoutTypes": ["all"], "intensityLevels": ["all"], "timeRange": "early" },
+  { "cue": "Round {{roundNumber}}, go!", "type": "start", "workoutTypes": ["all"], "intensityLevels": ["all"], "timeRange": "early" },
+  { "cue": "Focus on form.", "type": "start", "workoutTypes": ["fundamentals"], "intensityLevels": ["beginner"], "timeRange": "early" },
+  { "cue": "Start clean.", "type": "start", "workoutTypes": ["all"], "intensityLevels": ["all"], "timeRange": "early" },
+
+  { "cue": "Time!", "type": "end", "workoutTypes": ["all"], "intensityLevels": ["all"], "timeRange": "late" },
+  { "cue": "Grab some air.", "type": "end", "workoutTypes": ["all"], "intensityLevels": ["all"], "timeRange": "late" },
+  { "cue": "Good round!", "type": "end", "workoutTypes": ["all"], "intensityLevels": ["all"], "timeRange": "late" },
+  { "cue": "Next one's harder.", "type": "end", "workoutTypes": ["endurance", "power"], "intensityLevels": ["intermediate", "advanced"], "timeRange": "late" },
+
+  { "cue": "Double it up.", "type": "action", "workoutTypes": ["power", "speed", "freestyle"], "intensityLevels": ["intermediate", "advanced"], "timeRange": "mid" },
+  { "cue": "Back to the jab.", "type": "action", "workoutTypes": ["all"], "intensityLevels": ["all"], "timeRange": "any" },
+  { "cue": "Add the hook.", "type": "action", "workoutTypes": ["fundamentals", "power"], "intensityLevels": ["all"], "timeRange": "any" },
+  { "cue": "Slip and counter.", "type": "action", "workoutTypes": ["defense", "freestyle"], "intensityLevels": ["intermediate", "advanced"], "timeRange": "any" },
+  { "cue": "Work the body.", "type": "action", "workoutTypes": ["power", "endurance"], "intensityLevels": ["all"], "timeRange": "any" },
+  { "cue": "Reset your feet.", "type": "action", "workoutTypes": ["fundamentals", "defense"], "intensityLevels": ["beginner", "intermediate"], "timeRange": "any" },
+  { "cue": "Change levels.", "type": "action", "workoutTypes": ["speed", "endurance"], "intensityLevels": ["intermediate", "advanced"], "timeRange": "any" },
+  { "cue": "Step and fire.", "type": "action", "workoutTypes": ["power", "defense"], "intensityLevels": ["intermediate", "advanced"], "timeRange": "any" },
+
+  { "cue": "Push through!", "type": "motivation", "workoutTypes": ["all"], "intensityLevels": ["all"], "timeRange": "mid" },
+  { "cue": "Let's go!", "type": "motivation", "workoutTypes": ["all"], "intensityLevels": ["all"], "timeRange": "mid" },
+  { "cue": "Stay sharp!", "type": "motivation", "workoutTypes": ["all"], "intensityLevels": ["all"], "timeRange": "mid" },
+  { "cue": "Pick it up!", "type": "motivation", "workoutTypes": ["speed", "endurance"], "intensityLevels": ["intermediate", "advanced"], "timeRange": "late" },
+  { "cue": "Don't drop your hands.", "type": "motivation", "workoutTypes": ["fundamentals"], "intensityLevels": ["beginner", "intermediate"], "timeRange": "any" },
+  { "cue": "You've got more!", "type": "motivation", "workoutTypes": ["power", "endurance"], "intensityLevels": ["all"], "timeRange": "late" },
+
+  { "cue": "Slow it down.", "type": "pacing", "workoutTypes": ["power", "fundamentals"], "intensityLevels": ["beginner", "intermediate"], "timeRange": "any" },
+  { "cue": "Speed it up.", "type": "pacing", "workoutTypes": ["speed", "freestyle"], "intensityLevels": ["intermediate", "advanced"], "timeRange": "any" },
+  { "cue": "Control your breathing.", "type": "pacing", "workoutTypes": ["all"], "intensityLevels": ["all"], "timeRange": "any" },
+  { "cue": "Fast hands, light feet.", "type": "pacing", "workoutTypes": ["speed"], "intensityLevels": ["all"], "timeRange": "any" },
+  { "cue": "Hold that rhythm.", "type": "pacing", "workoutTypes": ["all"], "intensityLevels": ["all"], "timeRange": "any" }
+]
